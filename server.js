@@ -15,7 +15,7 @@ app.use(express.json());
 
 
 app.get("/", (req, res) => {
-    res.send("Server Is Started")
+    res.send("Server Is Running")
 })
 
 
