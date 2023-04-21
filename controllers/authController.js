@@ -37,10 +37,6 @@ const registerUser = asyncHandler(async (req, res) => {
             to: `whatsapp:${phone}`
         });
 
-        // hash Password
-        // const salt = await bcrypt.genSalt(10)
-        // const hashedPassword = await bcrypt.hash(password, salt)
-
 
         // Store code and user details in the database
         const newUser = new User({
@@ -108,13 +104,15 @@ const createPassword = asyncHandler(async (req, res) => {
 
         if (validUser.verified === true) {
 
-            const newpassword = await bcrypt.hash(password, 12);
+            // hash Password
+            const salt = await bcrypt.genSalt(10)
+            const hashedPassword = await bcrypt.hash(password, salt)
 
-            const setPassword = await User.findByIdAndUpdate({ _id: id }, { password: newpassword });
+            const user = await User.findByIdAndUpdate({ _id: id }, { password: hashedPassword });
 
-            await setPassword.save();
+            await user.save();
 
-            res.status(201).json({ status: 201, setPassword, message: "Password Created Successfully" })
+            res.status(201).json({ status: 201, user, message: "Password Created Successfully" })
         } else {
 
             res.status(401).json({ status: 401, message: "Password Not Created" })
