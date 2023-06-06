@@ -4,10 +4,8 @@ const { registerUser, verifyUser, createPassword, loginUser } = require('../cont
 const { protect } = require('../middleware/authMiddleware')
 
 router.post('/register', registerUser)
-router.post('/verify/:id', verifyUser)
-router.post('/createpassword/:id', createPassword)
+router.post('/verify', verifyUser)
+router.post('/createpassword', createPassword)
 router.post('/login', loginUser)
-
-
 
 module.exports = router

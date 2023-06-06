@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv")
 const path = require("path");
 const connectDatabase = require('./config/database');
+const cors = require("cors");
 const app = express()
 
 
@@ -12,7 +13,10 @@ const port = process.env.PORT || 5000
 
 // Middleware
 app.use(express.json());
-
+app.use(cors({
+    origin: "*",
+    credentials: true
+}));
 
 app.get("/", (req, res) => {
     res.send("Server Is Running")
