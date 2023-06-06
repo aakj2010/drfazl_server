@@ -8,8 +8,8 @@ const connectDatabase = () => {
     }).then(conn => {
         console.log(`MonoDB is Connected to host: ${conn.connection.host}`);
     })
-    // .catch(()=>{
-    //     console.log(error);
-    // })
+        .catch(() => {
+            console.log(error);
+        })
 }
 module.exports = connectDatabase

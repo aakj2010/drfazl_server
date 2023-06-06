@@ -2,94 +2,80 @@ const bcrypt = require('bcryptjs')
 const asyncHandler = require('express-async-handler')
 const User = require('../model/UserModel')
 const { generateToken } = require('../utils/token')
-const twilio = require("twilio");
+const nodemailer = require("nodemailer");
 
 
+// email config
 
-// @desc Authenticate new user
-// @route POST /api/v1/user/login
-// @accesss Public
-const registerUser = asyncHandler(async (req, res) => {
-
-    try {
-        const { phone } = req.body;
-
-        if (!phone) {
-            res.status(400)
-            throw new Error('Please add PhoneNumber')
-        }
-
-        // Check if user already exists in the database
-        const userExists = await User.findOne({ phone });
-        if (userExists) {
-            return res.status(409).json({ message: 'User already exists' });
-        }
-        // Define Twilio client
-        const accountSid = process.env.TWILIO_ACCOUNT_SID;
-        const authToken = process.env.TWILIO_AUTH_TOKEN;
-        const client = twilio(accountSid, authToken);
-
-        // Generate random code and send it to user's phone
-        const otp = Math.floor(1000 + Math.random() * 9000);
-        client.messages.create({
-            body: `Your OTP is ${otp}`,
-            from: process.env.TWILIO_PHONE_WHATSUPNUMBER,
-            to: `whatsapp:${phone}`
-        });
-
-
-        // Store code and user details in the database
-        const newUser = new User({
-            phone,
-            // password: null, 
-            // We'll hash the password after SMS verification
-            otp: otp
-        });
-        const savedUser = await newUser.save();
-
-        if (newUser) {
-            res.status(201).json({
-                _id: newUser.id,
-                phone: newUser.phone,
-                token: generateToken(newUser._id),
-                message: 'Please enter the code we sent to your phone number'
-            })
-        } else {
-            res.status(400)
-            throw new Error('Invalid user data')
-        }
-    } catch (error) {
-        console.log(error);
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: process.env.EMAIL,
+        pass: process.env.PASSWORD
     }
 })
 
+const registerUser = asyncHandler(async (req, res) => {
+    try {
+        const { email } = req.body;
+        const userExists = await User.findOne({ email });
+        if (userExists) {
+            return res.status(409).json({ message: 'User already exists' });
+        }
+        const otp = Math.floor(1000 + Math.random() * 9000);
+        const user = new User({
+            email: email,
+            otp: otp,
+        });
+        await user.save();
 
+        let mailOptions = {
+            from: process.env.EMAIL,
+            to: req.body.email,
+            subject: 'OTP for Signup',
+            text: `Your OTP for Signup is ${otp}`
+        };
+
+        transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+                console.log(error);
+                res.status(500).send(error);
+            } else {
+                console.log('Email sent: ' + info.response);
+                res.json({
+                    message: "OTP sent to email",
+                    email: email
+                });
+            }
+        });
+    } catch (error) {
+        console.log(error)
+    }
+});
 
 // @desc Authenticate new user
 // @route POST /api/v1/user/verify/:id
 // @accesss Public
 const verifyUser = asyncHandler(async (req, res) => {
     try {
+        const { email } = req.body;
         const { otp } = req.body;
-        const { id } = req.params;
-
-        const user = await User.findOne({ _id: id, otp })
-
-        if (!user) {
-            res.status(400).json({ success: false, message: "Invalid OTP" });
-            return;
+        const user = await User.findOne({ email, otp });
+        // console.log(user)
+        if (user) {
+            user.verified = true;
+            user.otp = undefined;
+            await user.save();
+            res.status(200).json({ success: true, message: "OTP verified successfully" });
+        } else {
+            res.status(403).send("Invalid OTP.");
         }
-
-        // Mark the user as verified and save the changes to the database
-        user.verified = true;
-        await user.save();
-
-        res.status(200).json({ success: true, message: "OTP verified successfully" });
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: "Internal server error" });
     }
-})
+});
+
 
 
 // @desc Authenticate new user
@@ -97,10 +83,10 @@ const verifyUser = asyncHandler(async (req, res) => {
 // @accesss Public
 const createPassword = asyncHandler(async (req, res) => {
     try {
-        const { id } = req.params;
+        const { email } = req.body;
         const { password } = req.body;
 
-        const validUser = await User.findOne({ _id: id })
+        const validUser = await User.findOne({ email })
 
         if (validUser.verified === true) {
 
@@ -108,7 +94,7 @@ const createPassword = asyncHandler(async (req, res) => {
             const salt = await bcrypt.genSalt(10)
             const hashedPassword = await bcrypt.hash(password, salt)
 
-            const user = await User.findByIdAndUpdate({ _id: id }, { password: hashedPassword });
+            const user = await User.findOneAndUpdate({ email }, { password: hashedPassword });
 
             await user.save();
 
@@ -129,16 +115,16 @@ const createPassword = asyncHandler(async (req, res) => {
 // @route POST /api/v1/user/login
 // @accesss Public
 const loginUser = asyncHandler(async (req, res) => {
-    const { phone, password } = req.body;
+    const { email, password } = req.body;
 
     // Check for user PhoneNumber
-    const user = await User.findOne({ phone })
+    const user = await User.findOne({ email })
     console.log(user)
 
     if (user && (await bcrypt.compare(password, user.password))) {
         res.json({
             _id: user.id,
-            name: user.phone,
+            name: user.email,
             token: generateToken(user._id),
             message: "logged in Successfully"
 
