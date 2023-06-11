@@ -1,12 +1,12 @@
 const express = require("express");
-const dotenv = require("dotenv")
+const dotenv = require("dotenv");
 const path = require("path");
 const connectDatabase = require('./config/database');
 const cors = require("cors");
 const app = express()
 
 
-dotenv.config({ path: path.join(__dirname, "config/.env") })
+dotenv.config({ path: path.join(__dirname, "/.env") })
 connectDatabase()
 
 const port = process.env.PORT || 5000
@@ -14,7 +14,7 @@ const port = process.env.PORT || 5000
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: "https://drfazl.netlify.app/",
+    origin: "*",
     credentials: true
 }));
 
