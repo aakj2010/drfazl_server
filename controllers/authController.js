@@ -38,7 +38,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
         transporter.sendMail(mailOptions, function (error, info) {
             if (error) {
-                console.log(error);
+                console.log(error.message);
                 res.status(500).send(error);
             } else {
                 console.log('Email sent: ' + info.response);
