@@ -1,31 +1,29 @@
-const express = require("express");
-const dotenv = require("dotenv");
+const app = require('./app')
 const path = require("path");
+const dotenv = require('dotenv');
 const connectDatabase = require('./config/database');
-const cors = require("cors");
-const app = express()
 
-
-dotenv.config({ path: path.join(__dirname, "config/.env") })
+dotenv.config({ path: path.join(__dirname, ".env") })
 connectDatabase()
 
 const port = process.env.PORT || 5000
 
-// Middleware
-app.use(express.json());
-app.use(cors({
-    origin: "*",
-    credentials: true
-}));
-
-app.get("/", (req, res) => {
-    res.send("Server Is Running")
+const server = app.listen(port, () => {
+    console.log(`Server Running on ${port} in ${process.env.NODE_ENV}`);
 })
 
+process.on('unhandledRejection', (err) => {
+    console.log(`Error: ${err.message}`);
+    console.log('Shutting down the server due to unhandled Rejection Error');
+    server.close(() => {
+        process.exit(1);
+    })
+})
 
-app.use('/api/v1/user', require('./routes/userRoutes'))
-
-
-app.listen(port, () => {
-    console.log(`Server Running on ${port} in ${process.env.NODE_ENV}`);
+process.on('uncaughtException', (err) => {
+    console.log(`Error: ${err.message}`);
+    console.log('Shutting down the server due to uncaught Exception Error');
+    server.close(() => {
+        process.exit(1);
+    })
 })

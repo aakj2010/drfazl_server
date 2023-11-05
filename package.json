@@ -19,6 +19,10 @@
     "express-async-handler": "^1.2.0",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^7.0.3",
-    "nodemailer": "^6.9.2"
+    "nodemailer": "^6.9.2",
+    "bcrypt": "^5.1.0",
+    "cookie-parser": "^1.4.6",
+    "crypto": "^1.0.1",
+    "validator": "^13.7.0"
   }
 }
