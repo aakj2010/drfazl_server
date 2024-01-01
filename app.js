@@ -14,7 +14,7 @@ dotenv.config({ path: path.join(__dirname, ".env") })
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: ["https://drfazl.netlify.app"],
+    origin: "*",
     credentials: true
 }))
 
